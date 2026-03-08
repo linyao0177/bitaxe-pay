@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Bitaxe x402 Pay</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a0a; color: #e0e0e0;
+    min-height: 100vh; display: flex; flex-direction: column;
+    padding: 16px; padding-top: env(safe-area-inset-top, 16px);
+}
+.header { text-align: center; padding: 16px 0; }
+.header h1 { font-size: 22px; color: #f7931a; }
+.header .subtitle { font-size: 12px; color: #888; margin-top: 4px; }
+
+.card {
+    background: #1a1a2e; border-radius: 16px; padding: 20px;
+    margin: 12px 0; border: 1px solid #2a2a4a;
+}
+.card h2 { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+
+.offer-box {
+    background: #0d1117; border: 1px solid #f7931a44; border-radius: 12px;
+    padding: 16px; text-align: center; margin: 12px 0;
+}
+.offer-price { font-size: 36px; font-weight: 800; color: #f7931a; }
+.offer-unit { font-size: 14px; color: #888; }
+.offer-details { font-size: 12px; color: #666; margin-top: 8px; line-height: 1.8; }
+.offer-details span { color: #aaa; }
+
+.btn {
+    width: 100%; padding: 16px; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    transition: all 0.2s; display: block; text-align: center;
+    text-decoration: none; margin-top: 10px;
+}
+.btn:active { transform: scale(0.98); }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn.metamask {
+    background: linear-gradient(135deg, #f6851b, #e2761b);
+    color: #fff; font-size: 18px;
+}
+.btn.primary {
+    background: linear-gradient(135deg, #f7931a, #e8850f);
+    color: #000;
+}
+.btn.wc {
+    background: linear-gradient(135deg, #3b99fc, #2d7dd2);
+    color: #fff;
+}
+.btn.secondary {
+    background: #1a1a2e; color: #f7931a; border: 1px solid #f7931a44;
+    font-size: 14px; padding: 12px;
+}
+
+.status-bar {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px; border-radius: 8px; margin: 12px 0;
+    font-size: 13px;
+}
+.status-bar.info { background: #1a2332; color: #58a6ff; }
+.status-bar.success { background: #0d2818; color: #3fb950; }
+.status-bar.error { background: #2d1117; color: #f85149; }
+.status-bar.pending { background: #2d2200; color: #d29922; }
+.dot {
+    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    background: currentColor;
+}
+.status-bar.pending .dot { animation: pulse 1s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+.divider { text-align: center; color: #555; font-size: 12px; margin: 12px 0 4px 0; }
+.hint { text-align: center; color: #555; font-size: 11px; margin-top: 6px; }
+
+.addr { font-family: monospace; font-size: 11px; word-break: break-all; }
+.tx-link { color: #58a6ff; text-decoration: none; word-break: break-all; font-size: 12px; font-family: monospace; }
+
+.footer { text-align: center; padding: 16px 0; margin-top: auto; }
+.footer a { color: #555; font-size: 11px; text-decoration: none; }
+
+.hidden { display: none !important; }
+
+.step-indicator { display: flex; justify-content: center; gap: 8px; margin: 16px 0; }
+.step { width: 32px; height: 4px; border-radius: 2px; background: #333; transition: background 0.3s; }
+.step.active { background: #f7931a; }
+.step.done { background: #3fb950; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>Bitaxe x402 Pay</h1>
+    <div class="subtitle">Hashrate Rental via Machine Payment</div>
+</div>
+
+<div class="step-indicator">
+    <div class="step active" id="step1"></div>
+    <div class="step" id="step2"></div>
+    <div class="step" id="step3"></div>
+</div>
+
+<!-- Step 1: Offer + Connect Wallet -->
+<div id="view-offer">
+    <div class="card">
+        <h2>Hashrate Offer</h2>
+        <div class="offer-box">
+            <div class="offer-price" id="offer-price">--</div>
+            <div class="offer-unit">USDC</div>
+            <div class="offer-details">
+                Duration: <span id="offer-duration">--</span><br>
+                Network: <span id="offer-network">--</span><br>
+                Pay to: <span id="offer-payto" class="addr">--</span>
+            </div>
+        </div>
+
+        <div id="status-offer" class="status-bar info hidden">
+            <div class="dot"></div><span></span>
+        </div>
+
+        <div id="wallet-options">
+            <!-- Injected (MetaMask in-app browser) -->
+            <button class="btn primary" id="btn-injected" onclick="connectInjected()" style="display:none">
+                Connect Wallet & Pay
+            </button>
+
+            <!-- MetaMask deep link (iPhone Safari → MetaMask app) -->
+            <a class="btn metamask" id="btn-deeplink" style="display:none">
+                Open in MetaMask
+            </a>
+            <p class="hint" id="hint-deeplink" style="display:none">
+                Tap to open this page inside MetaMask's browser
+            </p>
+
+            <!-- WalletConnect -->
+            <div class="divider" id="divider-wc" style="display:none">or use WalletConnect</div>
+            <button class="btn wc" id="btn-wc" onclick="connectWC()" style="display:none">
+                WalletConnect
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Step 2: Sign -->
+<div id="view-sign" class="hidden">
+    <div class="card">
+        <h2>Confirm Payment</h2>
+        <div class="offer-box">
+            <div class="offer-price" id="sign-amount">--</div>
+            <div class="offer-unit">USDC</div>
+            <div class="offer-details">
+                From: <span id="sign-from" class="addr">--</span><br>
+                To: <span id="sign-to" class="addr">--</span>
+            </div>
+        </div>
+
+        <div id="status-sign" class="status-bar info">
+            <div class="dot"></div><span>Wallet connected. Tap to sign.</span>
+        </div>
+
+        <button class="btn primary" id="btn-sign" onclick="signAndPay()">
+            Sign & Pay
+        </button>
+    </div>
+</div>
+
+<!-- Step 3: Done -->
+<div id="view-done" class="hidden">
+    <div class="card">
+        <h2>Payment Submitted</h2>
+        <div class="status-bar success">
+            <div class="dot"></div><span>EIP-712 authorization signed!</span>
+        </div>
+
+        <div class="offer-box" style="border-color: #3fb95044;">
+            <div class="offer-price" style="color: #3fb950;" id="done-amount">--</div>
+            <div class="offer-unit">USDC Authorized</div>
+            <div class="offer-details">
+                The signed authorization can be submitted on-chain<br>
+                to transfer USDC from your wallet to the miner.
+            </div>
+        </div>
+
+        <div style="margin: 12px 0;">
+            <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Signature</div>
+            <div class="addr" id="done-sig" style="color: #aaa; font-size: 10px;">--</div>
+        </div>
+
+        <div style="margin: 12px 0;">
+            <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Submit API</div>
+            <div class="addr" id="done-submit" style="color: #aaa; font-size: 10px;">--</div>
+        </div>
+
+        <button class="btn secondary" onclick="location.reload()" style="margin-top: 16px;">
+            Done
+        </button>
+    </div>
+</div>
+
+<div class="footer">
+    <a href="https://github.com/linyao0177/boat-mwr">Powered by boat-mwr x402</a>
+</div>
+
+<script>
+// ---- Read offer params from URL ----
+const params = new URLSearchParams(location.search);
+const OFFER = {
+    payTo:    params.get('to')      || '',
+    amount:   params.get('amount')  || '100000',
+    network:  params.get('network') || 'eip155:84532',
+    asset:    params.get('asset')   || '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    duration: params.get('duration')|| '3600',
+    device:   params.get('device')  || '',   // optional: device submit URL
+};
+
+const BASE_SEPOLIA_ID = 84532;
+
+let walletAddress = null;
+let activeProvider = null;
+
+// ---- Validate ----
+if (!OFFER.payTo) {
+    showStatus('status-offer', 'error', 'Missing "to" parameter in URL. QR code may be invalid.');
+} else {
+    // Populate offer display
+    const amt = (parseInt(OFFER.amount) / 1e6).toFixed(2);
+    document.getElementById('offer-price').textContent = amt;
+    document.getElementById('offer-duration').textContent =
+        parseInt(OFFER.duration) >= 3600
+            ? (parseInt(OFFER.duration)/3600) + ' hour'
+            : (parseInt(OFFER.duration)/60) + ' min';
+    document.getElementById('offer-network').textContent =
+        OFFER.network === 'eip155:84532' ? 'Base Sepolia' : OFFER.network;
+    document.getElementById('offer-payto').textContent = OFFER.payTo;
+
+    showStatus('status-offer', 'info', amt + ' USDC on ' + (OFFER.network === 'eip155:84532' ? 'Base Sepolia' : OFFER.network));
+    initWalletButtons();
+}
+
+function initWalletButtons() {
+    const isMobile = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
+    const hasInjected = !!window.ethereum;
+
+    if (hasInjected) {
+        // Inside MetaMask browser or desktop extension
+        document.getElementById('btn-injected').style.display = 'block';
+    }
+
+    if (isMobile && !hasInjected) {
+        // iPhone Safari / Android Chrome → deep link to MetaMask
+        const dl = document.getElementById('btn-deeplink');
+        // MetaMask deep link: opens this same URL in MetaMask's in-app browser
+        const pageUrl = location.href.replace(/^https?:\/\//, '');
+        dl.href = 'https://metamask.app.link/dapp/' + pageUrl;
+        dl.style.display = 'block';
+        document.getElementById('hint-deeplink').style.display = 'block';
+    }
+
+    // Show WalletConnect as fallback option (loaded dynamically)
+    const wcBtn = document.getElementById('btn-wc');
+    wcBtn.style.display = 'block';
+    if (hasInjected || (isMobile && !hasInjected)) {
+        document.getElementById('divider-wc').style.display = 'block';
+    }
+
+    if (!hasInjected && !isMobile) {
+        // Desktop without MetaMask
+        showStatus('status-offer', 'info', 'Install MetaMask, or use WalletConnect below.');
+    }
+}
+
+// ---- Connect: Injected provider ----
+async function connectInjected() {
+    const btn = document.getElementById('btn-injected');
+    btn.disabled = true;
+    btn.textContent = 'Connecting...';
+
+    try {
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        walletAddress = accounts[0];
+        activeProvider = window.ethereum;
+        await switchChain(activeProvider);
+        onConnected();
+    } catch (e) {
+        showStatus('status-offer', 'error', e.message);
+        btn.disabled = false;
+        btn.textContent = 'Connect Wallet & Pay';
+    }
+}
+
+// ---- Connect: WalletConnect (loaded dynamically) ----
+async function connectWC() {
+    const btn = document.getElementById('btn-wc');
+    btn.disabled = true;
+    btn.textContent = 'Loading...';
+    showStatus('status-offer', 'pending', 'Loading WalletConnect SDK...');
+
+    try {
+        const mod = await import('https://esm.sh/@walletconnect/ethereum-provider@2.17.3');
+        const WCProvider = mod.EthereumProvider || mod.default;
+
+        showStatus('status-offer', 'pending', 'Initializing WalletConnect...');
+
+        const provider = await WCProvider.init({
+            projectId: '2b3ac6f10a575840629f34a9f5a10945',
+            chains: [BASE_SEPOLIA_ID],
+            optionalChains: [BASE_SEPOLIA_ID],
+            showQrModal: true,
+            qrModalOptions: { themeMode: 'dark' },
+            metadata: {
+                name: 'Bitaxe x402 Pay',
+                description: 'Hashrate rental payment',
+                url: location.origin,
+                icons: []
+            }
+        });
+
+        showStatus('status-offer', 'pending', 'Connect your wallet...');
+        await provider.connect();
+
+        const accounts = await provider.request({ method: 'eth_accounts' });
+        if (!accounts || accounts.length === 0) throw new Error('No accounts returned');
+
+        walletAddress = accounts[0];
+        activeProvider = provider;
+        onConnected();
+    } catch (e) {
+        showStatus('status-offer', 'error', 'WalletConnect: ' + e.message);
+        btn.disabled = false;
+        btn.textContent = 'WalletConnect';
+    }
+}
+
+// ---- Switch to Base Sepolia ----
+async function switchChain(provider) {
+    try {
+        await provider.request({
+            method: 'wallet_switchEthereumChain',
+            params: [{ chainId: '0x' + BASE_SEPOLIA_ID.toString(16) }]
+        });
+    } catch (e) {
+        if (e.code === 4902) {
+            await provider.request({
+                method: 'wallet_addEthereumChain',
+                params: [{
+                    chainId: '0x' + BASE_SEPOLIA_ID.toString(16),
+                    chainName: 'Base Sepolia',
+                    nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
+                    rpcUrls: ['https://sepolia.base.org'],
+                    blockExplorerUrls: ['https://sepolia.basescan.org']
+                }]
+            });
+        }
+    }
+}
+
+// ---- Wallet connected → show sign view ----
+function onConnected() {
+    showView('view-sign');
+    setStep(2);
+    const amt = (parseInt(OFFER.amount) / 1e6).toFixed(2);
+    document.getElementById('sign-amount').textContent = amt;
+    document.getElementById('sign-from').textContent = walletAddress;
+    document.getElementById('sign-to').textContent = OFFER.payTo;
+}
+
+// ---- Sign EIP-712 TransferWithAuthorization ----
+async function signAndPay() {
+    const btn = document.getElementById('btn-sign');
+    btn.disabled = true;
+    btn.textContent = 'Signing...';
+    showStatus('status-sign', 'pending', 'Please confirm in your wallet...');
+
+    try {
+        const validAfter = 0;
+        const validBefore = Math.floor(Date.now() / 1000) + 3600;
+        const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
+            .map(b => b.toString(16).padStart(2, '0')).join('');
+
+        const msgParams = JSON.stringify({
+            types: {
+                EIP712Domain: [
+                    { name: 'name', type: 'string' },
+                    { name: 'version', type: 'string' },
+                    { name: 'chainId', type: 'uint256' },
+                    { name: 'verifyingContract', type: 'address' }
+                ],
+                TransferWithAuthorization: [
+                    { name: 'from', type: 'address' },
+                    { name: 'to', type: 'address' },
+                    { name: 'value', type: 'uint256' },
+                    { name: 'validAfter', type: 'uint256' },
+                    { name: 'validBefore', type: 'uint256' },
+                    { name: 'nonce', type: 'bytes32' }
+                ]
+            },
+            primaryType: 'TransferWithAuthorization',
+            domain: {
+                name: 'USDC', version: '2',
+                chainId: BASE_SEPOLIA_ID,
+                verifyingContract: OFFER.asset
+            },
+            message: {
+                from: walletAddress,
+                to: OFFER.payTo,
+                value: OFFER.amount,
+                validAfter: validAfter.toString(),
+                validBefore: validBefore.toString(),
+                nonce: nonce
+            }
+        });
+
+        const signature = await activeProvider.request({
+            method: 'eth_signTypedData_v4',
+            params: [walletAddress, msgParams]
+        });
+
+        showStatus('status-sign', 'success', 'Signature obtained!');
+
+        // If device URL is provided, submit the payment
+        if (OFFER.device) {
+            showStatus('status-sign', 'pending', 'Submitting payment to device...');
+            try {
+                const paymentPayload = {
+                    x402Version: 1, scheme: 'exact',
+                    network: OFFER.network,
+                    payload: {
+                        signature,
+                        authorization: {
+                            from: walletAddress, to: OFFER.payTo,
+                            value: OFFER.amount,
+                            validAfter: validAfter.toString(),
+                            validBefore: validBefore.toString(),
+                            nonce: nonce
+                        }
+                    }
+                };
+                await fetch(OFFER.device, {
+                    method: 'GET',
+                    headers: { 'X-PAYMENT': JSON.stringify(paymentPayload) }
+                });
+            } catch (e) {
+                console.warn('Device submit failed (ok if offline):', e);
+            }
+        }
+
+        // Show result
+        showView('view-done');
+        setStep(3);
+        document.getElementById('done-amount').textContent =
+            (parseInt(OFFER.amount) / 1e6).toFixed(2);
+        document.getElementById('done-sig').textContent =
+            signature.slice(0, 40) + '...' + signature.slice(-20);
+        if (OFFER.device) {
+            document.getElementById('done-submit').textContent = 'Submitted to ' + OFFER.device;
+        } else {
+            document.getElementById('done-submit').textContent = 'Manual mode (no device URL)';
+        }
+
+    } catch (e) {
+        showStatus('status-sign', 'error', e.message);
+        btn.disabled = false;
+        btn.textContent = 'Retry';
+    }
+}
+
+// ---- UI helpers ----
+function showView(id) {
+    ['view-offer', 'view-sign', 'view-done'].forEach(v =>
+        document.getElementById(v).classList.toggle('hidden', v !== id));
+}
+function setStep(n) {
+    for (let i = 1; i <= 3; i++) {
+        const el = document.getElementById('step' + i);
+        el.className = 'step' + (i === n ? ' active' : i < n ? ' done' : '');
+    }
+}
+function showStatus(id, type, msg) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.className = 'status-bar ' + type;
+    el.querySelector('span').textContent = msg;
+    el.classList.remove('hidden');
+}
+</script>
+</body>
+</html>
