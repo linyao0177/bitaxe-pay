@@ -41,20 +41,44 @@ body {
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 .btn.metamask {
     background: linear-gradient(135deg, #f6851b, #e2761b);
-    color: #fff; font-size: 18px;
+    color: #fff;
 }
 .btn.primary {
     background: linear-gradient(135deg, #f7931a, #e8850f);
     color: #000;
 }
-.btn.wc {
-    background: linear-gradient(135deg, #3b99fc, #2d7dd2);
+.btn.okx {
+    background: linear-gradient(135deg, #000, #1a1a1a);
+    color: #fff; border: 1px solid #333;
+}
+.btn.trust {
+    background: linear-gradient(135deg, #3375bb, #295fa0);
     color: #fff;
 }
-.btn.secondary {
-    background: #1a1a2e; color: #f7931a; border: 1px solid #f7931a44;
-    font-size: 14px; padding: 12px;
+.btn.imtoken {
+    background: linear-gradient(135deg, #11c4d1, #0da6b1);
+    color: #fff;
 }
+.btn.tp {
+    background: linear-gradient(135deg, #2980fe, #1a6ae0);
+    color: #fff;
+}
+.btn.coinbase {
+    background: linear-gradient(135deg, #0052ff, #003dd6);
+    color: #fff;
+}
+.btn.rainbow {
+    background: linear-gradient(135deg, #001e59, #174299);
+    color: #fff;
+}
+.btn.bitget {
+    background: linear-gradient(135deg, #00d2c8, #00b3aa);
+    color: #000;
+}
+.wallet-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
+}
+.wallet-grid .btn { font-size: 13px; padding: 14px 8px; margin-top: 0; }
 
 .status-bar {
     display: flex; align-items: center; gap: 8px;
@@ -128,11 +152,18 @@ body {
 
             <!-- Mobile wallet deep links (no SDK needed) -->
             <div id="mobile-wallets" style="display:none">
-                <a class="btn metamask" id="btn-metamask">Open in MetaMask</a>
-                <a class="btn wc" id="btn-coinbase" style="margin-top:8px">Open in Coinbase Wallet</a>
-                <a class="btn secondary" id="btn-rainbow" style="margin-top:8px">Open in Rainbow</a>
+                <a class="btn metamask" id="btn-metamask">MetaMask</a>
+                <a class="btn okx" id="btn-okx" style="margin-top:8px">OKX Wallet</a>
+                <div class="wallet-grid">
+                    <a class="btn trust" id="btn-trust">Trust Wallet</a>
+                    <a class="btn imtoken" id="btn-imtoken">imToken</a>
+                    <a class="btn tp" id="btn-tp">TokenPocket</a>
+                    <a class="btn coinbase" id="btn-coinbase">Coinbase</a>
+                    <a class="btn rainbow" id="btn-rainbow">Rainbow</a>
+                    <a class="btn bitget" id="btn-bitget">Bitget</a>
+                </div>
                 <p class="hint" style="margin-top:8px">
-                    Choose your wallet app. The page will reopen inside the wallet's browser.
+                    Choose your wallet. Page will reopen inside the wallet's dApp browser.
                 </p>
             </div>
         </div>
@@ -245,12 +276,25 @@ function initWalletButtons() {
     } else if (isMobile) {
         // Mobile Safari/Chrome → show wallet deep links
         const pageUrl = location.href.replace(/^https?:\/\//, '');
+        const encodedUrl = encodeURIComponent(location.href);
+
         document.getElementById('btn-metamask').href =
             'https://metamask.app.link/dapp/' + pageUrl;
+        document.getElementById('btn-okx').href =
+            'okx://wallet/dapp/url?dappUrl=' + encodedUrl;
+        document.getElementById('btn-trust').href =
+            'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodedUrl;
+        document.getElementById('btn-imtoken').href =
+            'imtokenv2://navigate/DappView?url=' + encodedUrl;
+        document.getElementById('btn-tp').href =
+            'tpoutside://open?params=' + encodeURIComponent(JSON.stringify({url: location.href}));
         document.getElementById('btn-coinbase').href =
-            'https://go.cb-w.com/dapp?cb_url=' + encodeURIComponent(location.href);
+            'https://go.cb-w.com/dapp?cb_url=' + encodedUrl;
         document.getElementById('btn-rainbow').href =
-            'https://rnbwapp.com/dapp?url=' + encodeURIComponent(location.href);
+            'https://rnbwapp.com/dapp?url=' + encodedUrl;
+        document.getElementById('btn-bitget').href =
+            'https://bkcode.vip?action=dapp&url=' + encodedUrl;
+
         document.getElementById('mobile-wallets').style.display = 'block';
     } else {
         // Desktop without extension
