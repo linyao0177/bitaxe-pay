@@ -121,24 +121,20 @@ body {
         </div>
 
         <div id="wallet-options">
-            <!-- Injected (MetaMask in-app browser) -->
+            <!-- Injected provider (MetaMask in-app browser / desktop extension) -->
             <button class="btn primary" id="btn-injected" onclick="connectInjected()" style="display:none">
                 Connect Wallet & Pay
             </button>
 
-            <!-- MetaMask deep link (iPhone Safari → MetaMask app) -->
-            <a class="btn metamask" id="btn-deeplink" style="display:none">
-                Open in MetaMask
-            </a>
-            <p class="hint" id="hint-deeplink" style="display:none">
-                Tap to open this page inside MetaMask's browser
-            </p>
-
-            <!-- WalletConnect -->
-            <div class="divider" id="divider-wc" style="display:none">or use WalletConnect</div>
-            <button class="btn wc" id="btn-wc" onclick="connectWC()" style="display:none">
-                WalletConnect
-            </button>
+            <!-- Mobile wallet deep links (no SDK needed) -->
+            <div id="mobile-wallets" style="display:none">
+                <a class="btn metamask" id="btn-metamask">Open in MetaMask</a>
+                <a class="btn wc" id="btn-coinbase" style="margin-top:8px">Open in Coinbase Wallet</a>
+                <a class="btn secondary" id="btn-rainbow" style="margin-top:8px">Open in Rainbow</a>
+                <p class="hint" style="margin-top:8px">
+                    Choose your wallet app. The page will reopen inside the wallet's browser.
+                </p>
+            </div>
         </div>
     </div>
 </div>
@@ -244,30 +240,21 @@ function initWalletButtons() {
     const hasInjected = !!window.ethereum;
 
     if (hasInjected) {
-        // Inside MetaMask browser or desktop extension
+        // Inside MetaMask/Coinbase/Rainbow in-app browser or desktop extension
         document.getElementById('btn-injected').style.display = 'block';
-    }
-
-    if (isMobile && !hasInjected) {
-        // iPhone Safari / Android Chrome → deep link to MetaMask
-        const dl = document.getElementById('btn-deeplink');
-        // MetaMask deep link: opens this same URL in MetaMask's in-app browser
+    } else if (isMobile) {
+        // Mobile Safari/Chrome → show wallet deep links
         const pageUrl = location.href.replace(/^https?:\/\//, '');
-        dl.href = 'https://metamask.app.link/dapp/' + pageUrl;
-        dl.style.display = 'block';
-        document.getElementById('hint-deeplink').style.display = 'block';
-    }
-
-    // Show WalletConnect as fallback option (loaded dynamically)
-    const wcBtn = document.getElementById('btn-wc');
-    wcBtn.style.display = 'block';
-    if (hasInjected || (isMobile && !hasInjected)) {
-        document.getElementById('divider-wc').style.display = 'block';
-    }
-
-    if (!hasInjected && !isMobile) {
-        // Desktop without MetaMask
-        showStatus('status-offer', 'info', 'Install MetaMask, or use WalletConnect below.');
+        document.getElementById('btn-metamask').href =
+            'https://metamask.app.link/dapp/' + pageUrl;
+        document.getElementById('btn-coinbase').href =
+            'https://go.cb-w.com/dapp?cb_url=' + encodeURIComponent(location.href);
+        document.getElementById('btn-rainbow').href =
+            'https://rnbwapp.com/dapp?url=' + encodeURIComponent(location.href);
+        document.getElementById('mobile-wallets').style.display = 'block';
+    } else {
+        // Desktop without extension
+        showStatus('status-offer', 'info', 'Install MetaMask browser extension to pay.');
     }
 }
 
@@ -287,49 +274,6 @@ async function connectInjected() {
         showStatus('status-offer', 'error', e.message);
         btn.disabled = false;
         btn.textContent = 'Connect Wallet & Pay';
-    }
-}
-
-// ---- Connect: WalletConnect (loaded dynamically) ----
-async function connectWC() {
-    const btn = document.getElementById('btn-wc');
-    btn.disabled = true;
-    btn.textContent = 'Loading...';
-    showStatus('status-offer', 'pending', 'Loading WalletConnect SDK...');
-
-    try {
-        const mod = await import('https://cdn.jsdelivr.net/npm/@walletconnect/ethereum-provider@2.17.3/+esm');
-        const WCProvider = mod.EthereumProvider || mod.default;
-
-        showStatus('status-offer', 'pending', 'Initializing WalletConnect...');
-
-        const provider = await WCProvider.init({
-            projectId: '2b3ac6f10a575840629f34a9f5a10945',
-            chains: [BASE_SEPOLIA_ID],
-            optionalChains: [BASE_SEPOLIA_ID],
-            showQrModal: true,
-            qrModalOptions: { themeMode: 'dark' },
-            metadata: {
-                name: 'Bitaxe x402 Pay',
-                description: 'Hashrate rental payment',
-                url: location.origin,
-                icons: []
-            }
-        });
-
-        showStatus('status-offer', 'pending', 'Connect your wallet...');
-        await provider.connect();
-
-        const accounts = await provider.request({ method: 'eth_accounts' });
-        if (!accounts || accounts.length === 0) throw new Error('No accounts returned');
-
-        walletAddress = accounts[0];
-        activeProvider = provider;
-        onConnected();
-    } catch (e) {
-        showStatus('status-offer', 'error', 'WalletConnect: ' + e.message);
-        btn.disabled = false;
-        btn.textContent = 'WalletConnect';
     }
 }
 
