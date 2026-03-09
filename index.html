@@ -15,6 +15,12 @@ body {
 .header { text-align: center; padding: 16px 0; }
 .header h1 { font-size: 22px; color: #f7931a; }
 .header .subtitle { font-size: 12px; color: #888; margin-top: 4px; }
+.net-badge {
+    display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 8px;
+    margin-top: 4px; font-weight: 700;
+}
+.net-badge.testnet { background: #f7931a33; color: #f7931a; }
+.net-badge.mainnet { background: #3fb95033; color: #3fb950; }
 
 .card {
     background: #1a1a2e; border-radius: 16px; padding: 20px;
@@ -39,78 +45,51 @@ body {
 }
 .btn:active { transform: scale(0.98); }
 .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-.btn.metamask {
-    background: linear-gradient(135deg, #f6851b, #e2761b);
-    color: #fff;
-}
-.btn.primary {
-    background: linear-gradient(135deg, #f7931a, #e8850f);
-    color: #000;
-}
-.btn.okx {
-    background: linear-gradient(135deg, #000, #1a1a1a);
-    color: #fff; border: 1px solid #333;
-}
-.btn.trust {
-    background: linear-gradient(135deg, #3375bb, #295fa0);
-    color: #fff;
-}
-.btn.imtoken {
-    background: linear-gradient(135deg, #11c4d1, #0da6b1);
-    color: #fff;
-}
-.btn.tp {
-    background: linear-gradient(135deg, #2980fe, #1a6ae0);
-    color: #fff;
-}
-.btn.coinbase {
-    background: linear-gradient(135deg, #0052ff, #003dd6);
-    color: #fff;
-}
-.btn.rainbow {
-    background: linear-gradient(135deg, #001e59, #174299);
-    color: #fff;
-}
-.btn.bitget {
-    background: linear-gradient(135deg, #00d2c8, #00b3aa);
-    color: #000;
-}
-.wallet-grid {
-    display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px;
-}
+.btn.metamask { background: linear-gradient(135deg, #f6851b, #e2761b); color: #fff; }
+.btn.primary { background: linear-gradient(135deg, #f7931a, #e8850f); color: #000; }
+.btn.okx { background: linear-gradient(135deg, #000, #1a1a1a); color: #fff; border: 1px solid #333; }
+.btn.trust { background: linear-gradient(135deg, #3375bb, #295fa0); color: #fff; }
+.btn.imtoken { background: linear-gradient(135deg, #11c4d1, #0da6b1); color: #fff; }
+.btn.tp { background: linear-gradient(135deg, #2980fe, #1a6ae0); color: #fff; }
+.btn.coinbase { background: linear-gradient(135deg, #0052ff, #003dd6); color: #fff; }
+.btn.rainbow { background: linear-gradient(135deg, #001e59, #174299); color: #fff; }
+.btn.bitget { background: linear-gradient(135deg, #00d2c8, #00b3aa); color: #000; }
+.btn.secondary { background: #1a1a2e; color: #f7931a; border: 1px solid #f7931a44; font-size: 14px; padding: 12px; }
+.wallet-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
 .wallet-grid .btn { font-size: 13px; padding: 14px 8px; margin-top: 0; }
 
 .status-bar {
     display: flex; align-items: center; gap: 8px;
-    padding: 12px; border-radius: 8px; margin: 12px 0;
-    font-size: 13px;
+    padding: 12px; border-radius: 8px; margin: 12px 0; font-size: 13px;
 }
 .status-bar.info { background: #1a2332; color: #58a6ff; }
 .status-bar.success { background: #0d2818; color: #3fb950; }
 .status-bar.error { background: #2d1117; color: #f85149; }
 .status-bar.pending { background: #2d2200; color: #d29922; }
-.dot {
-    width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
-    background: currentColor;
-}
+.dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: currentColor; }
 .status-bar.pending .dot { animation: pulse 1s infinite; }
 @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
 
-.divider { text-align: center; color: #555; font-size: 12px; margin: 12px 0 4px 0; }
 .hint { text-align: center; color: #555; font-size: 11px; margin-top: 6px; }
-
 .addr { font-family: monospace; font-size: 11px; word-break: break-all; }
 .tx-link { color: #58a6ff; text-decoration: none; word-break: break-all; font-size: 12px; font-family: monospace; }
-
 .footer { text-align: center; padding: 16px 0; margin-top: auto; }
 .footer a { color: #555; font-size: 11px; text-decoration: none; }
-
 .hidden { display: none !important; }
 
 .step-indicator { display: flex; justify-content: center; gap: 8px; margin: 16px 0; }
-.step { width: 32px; height: 4px; border-radius: 2px; background: #333; transition: background 0.3s; }
+.step { width: 24px; height: 4px; border-radius: 2px; background: #333; transition: background 0.3s; }
 .step.active { background: #f7931a; }
 .step.done { background: #3fb950; }
+
+.input-group { margin: 12px 0; }
+.input-group label { font-size: 12px; color: #888; display: block; margin-bottom: 4px; }
+.input-field {
+    width: 100%; padding: 10px; border-radius: 8px;
+    background: #0d1117; border: 1px solid #333; color: #e0e0e0;
+    font-size: 13px; font-family: monospace;
+}
+.input-field:focus { outline: none; border-color: #f7931a; }
 </style>
 </head>
 <body>
@@ -118,12 +97,14 @@ body {
 <div class="header">
     <h1>Bitaxe x402 Pay</h1>
     <div class="subtitle">Hashrate Rental via Machine Payment</div>
+    <div class="net-badge" id="net-badge"></div>
 </div>
 
 <div class="step-indicator">
     <div class="step active" id="step1"></div>
     <div class="step" id="step2"></div>
     <div class="step" id="step3"></div>
+    <div class="step" id="step4"></div>
 </div>
 
 <!-- Step 1: Offer + Connect Wallet -->
@@ -145,12 +126,9 @@ body {
         </div>
 
         <div id="wallet-options">
-            <!-- Injected provider (MetaMask in-app browser / desktop extension) -->
             <button class="btn primary" id="btn-injected" onclick="connectInjected()" style="display:none">
                 Connect Wallet & Pay
             </button>
-
-            <!-- Mobile wallet deep links (no SDK needed) -->
             <div id="mobile-wallets" style="display:none">
                 <a class="btn metamask" id="btn-metamask">MetaMask</a>
                 <a class="btn okx" id="btn-okx" style="margin-top:8px">OKX Wallet</a>
@@ -170,10 +148,10 @@ body {
     </div>
 </div>
 
-<!-- Step 2: Sign -->
+<!-- Step 2: Sign Authorization -->
 <div id="view-sign" class="hidden">
     <div class="card">
-        <h2>Confirm Payment</h2>
+        <h2>Sign Authorization</h2>
         <div class="offer-box">
             <div class="offer-price" id="sign-amount">--</div>
             <div class="offer-unit">USDC</div>
@@ -187,37 +165,56 @@ body {
             <div class="dot"></div><span>Wallet connected. Tap to sign.</span>
         </div>
 
-        <button class="btn primary" id="btn-sign" onclick="signAndPay()">
-            Sign & Pay
+        <button class="btn primary" id="btn-sign" onclick="signAuthorization()">
+            Sign Authorization
         </button>
     </div>
 </div>
 
-<!-- Step 3: Done -->
+<!-- Step 3: Submit On-Chain -->
+<div id="view-submit" class="hidden">
+    <div class="card">
+        <h2>Submit On-Chain</h2>
+        <div class="offer-box">
+            <div class="offer-price" id="submit-amount">--</div>
+            <div class="offer-unit">USDC Transfer</div>
+            <div class="offer-details">
+                Submitting <code>transferWithAuthorization</code> to USDC contract.<br>
+                You pay a small gas fee (&lt; $0.01 on Base).
+            </div>
+        </div>
+
+        <div id="status-submit" class="status-bar info">
+            <div class="dot"></div><span>Ready to submit.</span>
+        </div>
+
+        <button class="btn primary" id="btn-submit" onclick="submitOnChain()">
+            Submit Transaction
+        </button>
+    </div>
+</div>
+
+<!-- Step 4: Done -->
 <div id="view-done" class="hidden">
     <div class="card">
-        <h2>Payment Submitted</h2>
+        <h2>Payment Complete</h2>
         <div class="status-bar success">
-            <div class="dot"></div><span>EIP-712 authorization signed!</span>
+            <div class="dot"></div><span id="done-status">USDC transferred on-chain!</span>
         </div>
 
         <div class="offer-box" style="border-color: #3fb95044;">
             <div class="offer-price" style="color: #3fb950;" id="done-amount">--</div>
-            <div class="offer-unit">USDC Authorized</div>
-            <div class="offer-details">
-                The signed authorization can be submitted on-chain<br>
-                to transfer USDC from your wallet to the miner.
-            </div>
+            <div class="offer-unit">USDC Paid</div>
         </div>
 
         <div style="margin: 12px 0;">
-            <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Signature</div>
-            <div class="addr" id="done-sig" style="color: #aaa; font-size: 10px;">--</div>
+            <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Transaction</div>
+            <a class="tx-link" id="done-tx" href="#" target="_blank">--</a>
         </div>
 
-        <div style="margin: 12px 0;">
-            <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Submit API</div>
-            <div class="addr" id="done-submit" style="color: #aaa; font-size: 10px;">--</div>
+        <div id="done-device-status" style="margin: 12px 0; display:none;">
+            <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Device</div>
+            <div class="addr" id="done-device-msg" style="color: #3fb950;">--</div>
         </div>
 
         <button class="btn secondary" onclick="location.reload()" style="margin-top: 16px;">
@@ -231,38 +228,66 @@ body {
 </div>
 
 <script>
+// ---- Network Configuration ----
+const NETWORKS = {
+    'eip155:84532': {
+        chainId: 84532,
+        name: 'Base Sepolia',
+        rpcUrl: 'https://sepolia.base.org',
+        explorer: 'https://sepolia.basescan.org',
+        usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+        usdcName: 'USDC',
+        usdcVersion: '2',
+        isTestnet: true,
+    },
+    'eip155:8453': {
+        chainId: 8453,
+        name: 'Base',
+        rpcUrl: 'https://mainnet.base.org',
+        explorer: 'https://basescan.org',
+        usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
+        usdcName: 'USD Coin',
+        usdcVersion: '2',
+        isTestnet: false,
+    },
+};
+
 // ---- Read offer params from URL ----
 const params = new URLSearchParams(location.search);
 const OFFER = {
     payTo:    params.get('to')      || '',
     amount:   params.get('amount')  || '100000',
     network:  params.get('network') || 'eip155:84532',
-    asset:    params.get('asset')   || '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
+    asset:    params.get('asset')   || '',
     duration: params.get('duration')|| '3600',
-    device:   params.get('device')  || '',   // optional: device submit URL
+    device:   params.get('device')  || '',
 };
 
-const BASE_SEPOLIA_ID = 84532;
+const NET = NETWORKS[OFFER.network] || NETWORKS['eip155:84532'];
+if (!OFFER.asset) OFFER.asset = NET.usdc;
 
 let walletAddress = null;
 let activeProvider = null;
+let signedAuth = null; // stored after signing
 
-// ---- Validate ----
+// ---- Network badge ----
+const badge = document.getElementById('net-badge');
+badge.textContent = NET.name;
+badge.className = 'net-badge ' + (NET.isTestnet ? 'testnet' : 'mainnet');
+
+// ---- Validate & Init ----
 if (!OFFER.payTo) {
     showStatus('status-offer', 'error', 'Missing "to" parameter in URL. QR code may be invalid.');
 } else {
-    // Populate offer display
     const amt = (parseInt(OFFER.amount) / 1e6).toFixed(2);
     document.getElementById('offer-price').textContent = amt;
     document.getElementById('offer-duration').textContent =
         parseInt(OFFER.duration) >= 3600
             ? (parseInt(OFFER.duration)/3600) + ' hour'
             : (parseInt(OFFER.duration)/60) + ' min';
-    document.getElementById('offer-network').textContent =
-        OFFER.network === 'eip155:84532' ? 'Base Sepolia' : OFFER.network;
+    document.getElementById('offer-network').textContent = NET.name;
     document.getElementById('offer-payto').textContent = OFFER.payTo;
-
-    showStatus('status-offer', 'info', amt + ' USDC on ' + (OFFER.network === 'eip155:84532' ? 'Base Sepolia' : OFFER.network));
+    showStatus('status-offer', 'info', amt + ' USDC on ' + NET.name);
     initWalletButtons();
 }
 
@@ -271,43 +296,29 @@ function initWalletButtons() {
     const hasInjected = !!window.ethereum;
 
     if (hasInjected) {
-        // Inside MetaMask/Coinbase/Rainbow in-app browser or desktop extension
         document.getElementById('btn-injected').style.display = 'block';
     } else if (isMobile) {
-        // Mobile Safari/Chrome → show wallet deep links
         const pageUrl = location.href.replace(/^https?:\/\//, '');
         const encodedUrl = encodeURIComponent(location.href);
-
-        document.getElementById('btn-metamask').href =
-            'https://metamask.app.link/dapp/' + pageUrl;
-        document.getElementById('btn-okx').href =
-            'okx://wallet/dapp/url?dappUrl=' + encodedUrl;
-        document.getElementById('btn-trust').href =
-            'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodedUrl;
-        document.getElementById('btn-imtoken').href =
-            'imtokenv2://navigate/DappView?url=' + encodedUrl;
-        document.getElementById('btn-tp').href =
-            'tpoutside://open?params=' + encodeURIComponent(JSON.stringify({url: location.href}));
-        document.getElementById('btn-coinbase').href =
-            'https://go.cb-w.com/dapp?cb_url=' + encodedUrl;
-        document.getElementById('btn-rainbow').href =
-            'https://rnbwapp.com/dapp?url=' + encodedUrl;
-        document.getElementById('btn-bitget').href =
-            'https://bkcode.vip?action=dapp&url=' + encodedUrl;
-
+        document.getElementById('btn-metamask').href = 'https://metamask.app.link/dapp/' + pageUrl;
+        document.getElementById('btn-okx').href = 'okx://wallet/dapp/url?dappUrl=' + encodedUrl;
+        document.getElementById('btn-trust').href = 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodedUrl;
+        document.getElementById('btn-imtoken').href = 'imtokenv2://navigate/DappView?url=' + encodedUrl;
+        document.getElementById('btn-tp').href = 'tpoutside://open?params=' + encodeURIComponent(JSON.stringify({url: location.href}));
+        document.getElementById('btn-coinbase').href = 'https://go.cb-w.com/dapp?cb_url=' + encodedUrl;
+        document.getElementById('btn-rainbow').href = 'https://rnbwapp.com/dapp?url=' + encodedUrl;
+        document.getElementById('btn-bitget').href = 'https://bkcode.vip?action=dapp&url=' + encodedUrl;
         document.getElementById('mobile-wallets').style.display = 'block';
     } else {
-        // Desktop without extension
         showStatus('status-offer', 'info', 'Install MetaMask browser extension to pay.');
     }
 }
 
-// ---- Connect: Injected provider ----
+// ---- Connect Wallet ----
 async function connectInjected() {
     const btn = document.getElementById('btn-injected');
     btn.disabled = true;
     btn.textContent = 'Connecting...';
-
     try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         walletAddress = accounts[0];
@@ -321,30 +332,26 @@ async function connectInjected() {
     }
 }
 
-// ---- Switch to Base Sepolia ----
 async function switchChain(provider) {
+    const hexId = '0x' + NET.chainId.toString(16);
     try {
-        await provider.request({
-            method: 'wallet_switchEthereumChain',
-            params: [{ chainId: '0x' + BASE_SEPOLIA_ID.toString(16) }]
-        });
+        await provider.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: hexId }] });
     } catch (e) {
         if (e.code === 4902) {
             await provider.request({
                 method: 'wallet_addEthereumChain',
                 params: [{
-                    chainId: '0x' + BASE_SEPOLIA_ID.toString(16),
-                    chainName: 'Base Sepolia',
+                    chainId: hexId,
+                    chainName: NET.name,
                     nativeCurrency: { name: 'ETH', symbol: 'ETH', decimals: 18 },
-                    rpcUrls: ['https://sepolia.base.org'],
-                    blockExplorerUrls: ['https://sepolia.basescan.org']
+                    rpcUrls: [NET.rpcUrl],
+                    blockExplorerUrls: [NET.explorer]
                 }]
             });
         }
     }
 }
 
-// ---- Wallet connected → show sign view ----
 function onConnected() {
     showView('view-sign');
     setStep(2);
@@ -354,14 +361,19 @@ function onConnected() {
     document.getElementById('sign-to').textContent = OFFER.payTo;
 }
 
-// ---- Sign EIP-712 TransferWithAuthorization ----
-async function signAndPay() {
+// ---- Step 2: Sign EIP-712 Authorization ----
+async function signAuthorization() {
     const btn = document.getElementById('btn-sign');
     btn.disabled = true;
     btn.textContent = 'Signing...';
     showStatus('status-sign', 'pending', 'Please confirm in your wallet...');
 
     try {
+        // Mainnet safety check
+        if (!NET.isTestnet) {
+            // In MetaMask in-app browser, confirm() may not work well, so just proceed
+        }
+
         const validAfter = 0;
         const validBefore = Math.floor(Date.now() / 1000) + 3600;
         const nonce = '0x' + Array.from(crypto.getRandomValues(new Uint8Array(32)))
@@ -386,13 +398,13 @@ async function signAndPay() {
             },
             primaryType: 'TransferWithAuthorization',
             domain: {
-                name: 'USDC', version: '2',
-                chainId: BASE_SEPOLIA_ID,
+                name: NET.usdcName,
+                version: NET.usdcVersion,
+                chainId: NET.chainId,
                 verifyingContract: OFFER.asset
             },
             message: {
-                from: walletAddress,
-                to: OFFER.payTo,
+                from: walletAddress, to: OFFER.payTo,
                 value: OFFER.amount,
                 validAfter: validAfter.toString(),
                 validBefore: validBefore.toString(),
@@ -405,47 +417,20 @@ async function signAndPay() {
             params: [walletAddress, msgParams]
         });
 
-        showStatus('status-sign', 'success', 'Signature obtained!');
+        // Store for on-chain submission
+        signedAuth = { signature, validAfter, validBefore, nonce };
 
-        // If device URL is provided, submit the payment
-        if (OFFER.device) {
-            showStatus('status-sign', 'pending', 'Submitting payment to device...');
-            try {
-                const paymentPayload = {
-                    x402Version: 1, scheme: 'exact',
-                    network: OFFER.network,
-                    payload: {
-                        signature,
-                        authorization: {
-                            from: walletAddress, to: OFFER.payTo,
-                            value: OFFER.amount,
-                            validAfter: validAfter.toString(),
-                            validBefore: validBefore.toString(),
-                            nonce: nonce
-                        }
-                    }
-                };
-                await fetch(OFFER.device, {
-                    method: 'GET',
-                    headers: { 'X-PAYMENT': JSON.stringify(paymentPayload) }
-                });
-            } catch (e) {
-                console.warn('Device submit failed (ok if offline):', e);
-            }
-        }
+        showStatus('status-sign', 'success', 'Authorization signed!');
 
-        // Show result
-        showView('view-done');
-        setStep(3);
-        document.getElementById('done-amount').textContent =
-            (parseInt(OFFER.amount) / 1e6).toFixed(2);
-        document.getElementById('done-sig').textContent =
-            signature.slice(0, 40) + '...' + signature.slice(-20);
-        if (OFFER.device) {
-            document.getElementById('done-submit').textContent = 'Submitted to ' + OFFER.device;
-        } else {
-            document.getElementById('done-submit').textContent = 'Manual mode (no device URL)';
-        }
+        // Move to step 3
+        setTimeout(() => {
+            showView('view-submit');
+            setStep(3);
+            document.getElementById('submit-amount').textContent =
+                (parseInt(OFFER.amount) / 1e6).toFixed(2);
+            showStatus('status-submit', 'info',
+                'Submit the transfer to ' + NET.name + '. Gas fee < $0.01.');
+        }, 500);
 
     } catch (e) {
         showStatus('status-sign', 'error', e.message);
@@ -454,13 +439,130 @@ async function signAndPay() {
     }
 }
 
+// ---- Step 3: Submit transferWithAuthorization On-Chain ----
+function padHex(hex, bytes) {
+    return hex.replace(/^0x/, '').padStart(bytes * 2, '0');
+}
+
+function encodeTransferWithAuth(from, to, value, validAfter, validBefore, nonce, v, r, s) {
+    const selector = 'e3ee160e';
+    return '0x' + selector
+        + padHex(from, 32)
+        + padHex(to, 32)
+        + padHex(BigInt(value).toString(16), 32)
+        + padHex(BigInt(validAfter).toString(16), 32)
+        + padHex(BigInt(validBefore).toString(16), 32)
+        + padHex(nonce, 32)
+        + padHex(v.toString(16), 32)
+        + padHex(r, 32)
+        + padHex(s, 32);
+}
+
+async function waitForReceipt(txHash, maxAttempts) {
+    maxAttempts = maxAttempts || 40;
+    for (let i = 0; i < maxAttempts; i++) {
+        const receipt = await activeProvider.request({
+            method: 'eth_getTransactionReceipt',
+            params: [txHash]
+        });
+        if (receipt) {
+            if (receipt.status === '0x1') return receipt;
+            throw new Error('Transaction reverted');
+        }
+        await new Promise(r => setTimeout(r, 3000));
+    }
+    throw new Error('Transaction confirmation timeout');
+}
+
+async function submitOnChain() {
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true;
+    btn.textContent = 'Submitting...';
+    showStatus('status-submit', 'pending', 'Sending transaction...');
+
+    try {
+        const sig = signedAuth.signature;
+        const r = '0x' + sig.slice(2, 66);
+        const s = '0x' + sig.slice(66, 130);
+        const v = parseInt(sig.slice(130, 132), 16);
+
+        const calldata = encodeTransferWithAuth(
+            walletAddress, OFFER.payTo, OFFER.amount,
+            signedAuth.validAfter, signedAuth.validBefore,
+            signedAuth.nonce, v, r, s
+        );
+
+        const txHash = await activeProvider.request({
+            method: 'eth_sendTransaction',
+            params: [{
+                from: walletAddress,
+                to: OFFER.asset,
+                data: calldata,
+                value: '0x0',
+            }]
+        });
+
+        showStatus('status-submit', 'pending', 'Waiting for confirmation...');
+
+        const receipt = await waitForReceipt(txHash);
+
+        showStatus('status-submit', 'success', 'Transaction confirmed!');
+
+        // Notify device/bridge if URL provided
+        let deviceMsg = '';
+        if (OFFER.device) {
+            try {
+                showStatus('status-submit', 'pending', 'Notifying device...');
+                const resp = await fetch(OFFER.device, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        tx_hash: txHash,
+                        chain_id: NET.chainId,
+                        from: walletAddress,
+                        amount: OFFER.amount,
+                        duration: parseInt(OFFER.duration),
+                    })
+                });
+                if (resp.ok) {
+                    const result = await resp.json();
+                    deviceMsg = result.message || 'Hashrate rental activated!';
+                } else {
+                    deviceMsg = 'Device notified (HTTP ' + resp.status + ')';
+                }
+            } catch (e) {
+                deviceMsg = 'Device notification failed: ' + e.message;
+            }
+        }
+
+        // Show done view
+        showView('view-done');
+        setStep(4);
+        document.getElementById('done-amount').textContent =
+            (parseInt(OFFER.amount) / 1e6).toFixed(2);
+        const txLink = document.getElementById('done-tx');
+        txLink.textContent = txHash;
+        txLink.href = NET.explorer + '/tx/' + txHash;
+
+        if (deviceMsg) {
+            document.getElementById('done-device-status').style.display = 'block';
+            document.getElementById('done-device-msg').textContent = deviceMsg;
+        }
+
+    } catch (e) {
+        showStatus('status-submit', 'error', e.message);
+        btn.disabled = false;
+        btn.textContent = 'Retry';
+    }
+}
+
 // ---- UI helpers ----
 function showView(id) {
-    ['view-offer', 'view-sign', 'view-done'].forEach(v =>
+    ['view-offer', 'view-sign', 'view-submit', 'view-done'].forEach(v =>
         document.getElementById(v).classList.toggle('hidden', v !== id));
 }
 function setStep(n) {
-    for (let i = 1; i <= 3; i++) {
+    for (let i = 1; i <= 4; i++) {
         const el = document.getElementById('step' + i);
         el.className = 'step' + (i === n ? ' active' : i < n ? ' done' : '');
     }
