@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitaxe x402 QR Generator</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+    background: #0a0a0a; color: #e0e0e0;
+    min-height: 100vh; display: flex; flex-direction: column;
+    align-items: center; padding: 24px;
+}
+h1 { font-size: 22px; color: #f7931a; margin-bottom: 4px; }
+.subtitle { font-size: 12px; color: #888; margin-bottom: 24px; }
+
+.card {
+    background: #1a1a2e; border-radius: 16px; padding: 24px;
+    width: 100%; max-width: 420px; border: 1px solid #2a2a4a;
+    margin-bottom: 16px;
+}
+.card h2 { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; }
+
+.field { margin-bottom: 16px; }
+.field label { font-size: 13px; color: #aaa; display: block; margin-bottom: 6px; }
+.field input, .field select {
+    width: 100%; padding: 12px; border-radius: 10px;
+    background: #0d1117; border: 1px solid #333; color: #e0e0e0;
+    font-size: 15px;
+}
+.field input:focus, .field select:focus { outline: none; border-color: #f7931a; }
+.field select { appearance: none; cursor: pointer; }
+.field .hint { font-size: 11px; color: #555; margin-top: 4px; }
+
+.amount-row { display: flex; align-items: center; gap: 8px; }
+.amount-row input { flex: 1; }
+.amount-row .unit { color: #888; font-size: 14px; font-weight: 700; white-space: nowrap; }
+
+.presets { display: flex; gap: 8px; margin-top: 8px; }
+.presets button {
+    flex: 1; padding: 8px; border: 1px solid #333; border-radius: 8px;
+    background: #0d1117; color: #aaa; font-size: 13px; cursor: pointer;
+}
+.presets button:hover { border-color: #f7931a; color: #f7931a; }
+
+.btn {
+    width: 100%; padding: 16px; border: none; border-radius: 12px;
+    font-size: 16px; font-weight: 700; cursor: pointer;
+    background: linear-gradient(135deg, #f7931a, #e8850f); color: #000;
+    margin-top: 8px;
+}
+.btn:active { transform: scale(0.98); }
+
+#qr-card { display: none; }
+#qr-container {
+    background: #fff; border-radius: 12px; padding: 16px;
+    display: flex; justify-content: center; margin: 12px 0;
+}
+#qr-container canvas { max-width: 100%; height: auto !important; }
+
+#pay-url {
+    font-family: monospace; font-size: 10px; color: #888;
+    word-break: break-all; margin: 12px 0; line-height: 1.6;
+    background: #0d1117; padding: 12px; border-radius: 8px;
+}
+
+.action-row { display: flex; gap: 8px; }
+.action-row button {
+    flex: 1; padding: 12px; border: 1px solid #333; border-radius: 10px;
+    background: #1a1a2e; color: #aaa; font-size: 13px; font-weight: 600;
+    cursor: pointer;
+}
+.action-row button:hover { border-color: #f7931a; color: #f7931a; }
+
+.net-badge {
+    display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 8px;
+    font-weight: 700; margin-left: 8px;
+}
+.net-badge.testnet { background: #f7931a33; color: #f7931a; }
+.net-badge.mainnet { background: #3fb95033; color: #3fb950; }
+
+.footer { margin-top: auto; padding: 24px 0; }
+.footer a { color: #555; font-size: 11px; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<h1>Bitaxe x402 QR Generator</h1>
+<div class="subtitle">Generate a payment QR code for your Bitaxe miner</div>
+
+<div class="card">
+    <h2>Payment Settings</h2>
+
+    <div class="field">
+        <label>Receive Address (your Bitaxe ETH wallet)</label>
+        <input type="text" id="input-to" placeholder="0x..." value="0x933190d1be975d61ba0e712263918b7688d6e49a">
+        <div class="hint">The device's Ethereum address that receives USDC</div>
+    </div>
+
+    <div class="field">
+        <label>Amount</label>
+        <div class="amount-row">
+            <input type="number" id="input-amount" placeholder="0.10" value="0.10" step="0.01" min="0.01">
+            <span class="unit">USDC</span>
+        </div>
+        <div class="presets">
+            <button onclick="setAmount(0.10)">$0.10</button>
+            <button onclick="setAmount(0.50)">$0.50</button>
+            <button onclick="setAmount(1.00)">$1.00</button>
+            <button onclick="setAmount(5.00)">$5.00</button>
+        </div>
+    </div>
+
+    <div class="field">
+        <label>Network</label>
+        <select id="input-network">
+            <option value="eip155:84532">Base Sepolia (Testnet)</option>
+            <option value="eip155:8453">Base (Mainnet)</option>
+        </select>
+    </div>
+
+    <div class="field">
+        <label>Duration</label>
+        <select id="input-duration">
+            <option value="300">5 minutes</option>
+            <option value="1800">30 minutes</option>
+            <option value="3600" selected>1 hour</option>
+            <option value="7200">2 hours</option>
+            <option value="86400">24 hours</option>
+        </select>
+    </div>
+
+    <button class="btn" onclick="generateQR()">Generate QR Code</button>
+</div>
+
+<div class="card" id="qr-card">
+    <h2>Payment QR Code <span class="net-badge" id="qr-badge"></span></h2>
+    <div id="qr-container"></div>
+    <div id="pay-url"></div>
+    <div class="action-row">
+        <button onclick="copyUrl()">Copy URL</button>
+        <button onclick="downloadQR()">Download QR</button>
+        <button onclick="testOpen()">Test Open</button>
+    </div>
+</div>
+
+<div class="footer">
+    <a href="https://github.com/linyao0177/boat-mwr">Powered by boat-mwr x402</a>
+</div>
+
+<!-- QR Code library (qrcode.js, ~15KB, MIT license) -->
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.4/build/qrcode.min.js"></script>
+
+<script>
+const BASE_URL = 'https://linyao0177.github.io/bitaxe-pay/';
+let currentUrl = '';
+
+function setAmount(val) {
+    document.getElementById('input-amount').value = val.toFixed(2);
+}
+
+function generateQR() {
+    const to = document.getElementById('input-to').value.trim();
+    const amountUSDC = parseFloat(document.getElementById('input-amount').value);
+    const network = document.getElementById('input-network').value;
+    const duration = document.getElementById('input-duration').value;
+
+    if (!to || !to.startsWith('0x')) {
+        alert('Please enter a valid Ethereum address');
+        return;
+    }
+    if (isNaN(amountUSDC) || amountUSDC <= 0) {
+        alert('Please enter a valid amount');
+        return;
+    }
+
+    // Convert USDC to smallest unit (6 decimals)
+    const amount = Math.round(amountUSDC * 1e6);
+
+    const params = new URLSearchParams({
+        to, amount, network, duration
+    });
+    currentUrl = BASE_URL + '?' + params.toString();
+
+    // Show QR card
+    const qrCard = document.getElementById('qr-card');
+    qrCard.style.display = 'block';
+
+    // Network badge
+    const badge = document.getElementById('qr-badge');
+    const isTestnet = network === 'eip155:84532';
+    badge.textContent = isTestnet ? 'Testnet' : 'Mainnet';
+    badge.className = 'net-badge ' + (isTestnet ? 'testnet' : 'mainnet');
+
+    // URL display
+    document.getElementById('pay-url').textContent = currentUrl;
+
+    // Generate QR
+    const container = document.getElementById('qr-container');
+    container.innerHTML = '';
+    const canvas = document.createElement('canvas');
+    container.appendChild(canvas);
+
+    QRCode.toCanvas(canvas, currentUrl, {
+        width: 280,
+        margin: 2,
+        color: { dark: '#000000', light: '#ffffff' },
+        errorCorrectionLevel: 'M',
+    });
+
+    // Scroll to QR
+    qrCard.scrollIntoView({ behavior: 'smooth' });
+}
+
+function copyUrl() {
+    navigator.clipboard.writeText(currentUrl).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        btn.style.color = '#3fb950';
+        setTimeout(() => { btn.textContent = 'Copy URL'; btn.style.color = ''; }, 1500);
+    });
+}
+
+function downloadQR() {
+    const canvas = document.querySelector('#qr-container canvas');
+    if (!canvas) return;
+
+    // Create a larger canvas with padding and label
+    const pad = 40;
+    const labelH = 50;
+    const w = canvas.width + pad * 2;
+    const h = canvas.height + pad * 2 + labelH;
+
+    const out = document.createElement('canvas');
+    out.width = w;
+    out.height = h;
+    const ctx = out.getContext('2d');
+
+    // White background
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+
+    // QR code
+    ctx.drawImage(canvas, pad, pad);
+
+    // Label
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 16px -apple-system, sans-serif';
+    ctx.textAlign = 'center';
+    const amount = document.getElementById('input-amount').value;
+    const network = document.getElementById('input-network').value;
+    const netName = network === 'eip155:8453' ? 'Base' : 'Base Sepolia';
+    ctx.fillText('Bitaxe x402 — ' + amount + ' USDC (' + netName + ')', w / 2, h - pad + 10);
+
+    // Download
+    const link = document.createElement('a');
+    link.download = 'bitaxe-x402-qr.png';
+    link.href = out.toDataURL('image/png');
+    link.click();
+}
+
+function testOpen() {
+    window.open(currentUrl, '_blank');
+}
+</script>
+</body>
+</html>
