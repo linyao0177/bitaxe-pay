@@ -83,33 +83,15 @@ h1 { font-size: 20px; color: #f7931a; margin-bottom: 16px; }
 <h1>Bitaxe x402 QR Generator</h1>
 
 <div class="container">
-    <div class="field">
-        <label>Receive Address</label>
-        <input type="text" id="input-to" placeholder="0x..." value="0x933190d1be975d61ba0e712263918b7688d6e49a">
-    </div>
-
-    <div class="row">
-        <div class="field">
-            <label>Amount (USDC)</label>
-            <div class="amount-row">
-                <input type="number" id="input-amount" placeholder="0.10" value="0.10" step="0.01" min="0.01">
-                <span class="unit">USDC</span>
-            </div>
-            <div class="presets">
-                <button onclick="setAmount(0.10)">$0.10</button>
-                <button onclick="setAmount(0.50)">$0.50</button>
-                <button onclick="setAmount(1)">$1</button>
-                <button onclick="setAmount(5)">$5</button>
-            </div>
-        </div>
-    </div>
-
     <div class="row">
         <div class="field">
             <label>Network</label>
-            <select id="input-network">
+            <select id="input-network" onchange="onNetworkChange()">
                 <option value="eip155:84532">Base Sepolia (Testnet)</option>
                 <option value="eip155:8453">Base (Mainnet)</option>
+                <option value="solana:devnet">Solana Devnet</option>
+                <option value="solana:mainnet">Solana Mainnet</option>
+                <option value="lightning">Lightning Network</option>
             </select>
         </div>
         <div class="field">
@@ -121,6 +103,33 @@ h1 { font-size: 20px; color: #f7931a; margin-bottom: 16px; }
                 <option value="7200">2 hours</option>
                 <option value="86400">24 hours</option>
             </select>
+        </div>
+    </div>
+
+    <div class="field">
+        <label id="addr-label">Receive Address</label>
+        <input type="text" id="input-to" placeholder="0x..." value="0x933190d1be975d61ba0e712263918b7688d6e49a">
+    </div>
+
+    <div class="row">
+        <div class="field">
+            <label id="amount-label">Amount (USDC)</label>
+            <div class="amount-row">
+                <input type="number" id="input-amount" placeholder="0.10" value="0.10" step="0.01" min="0.01">
+                <span class="unit" id="amount-unit">USDC</span>
+            </div>
+            <div class="presets" id="presets-usdc">
+                <button onclick="setAmount(0.10)">$0.10</button>
+                <button onclick="setAmount(0.50)">$0.50</button>
+                <button onclick="setAmount(1)">$1</button>
+                <button onclick="setAmount(5)">$5</button>
+            </div>
+            <div class="presets" id="presets-sats" style="display:none">
+                <button onclick="setAmount(100)">100</button>
+                <button onclick="setAmount(1000)">1K</button>
+                <button onclick="setAmount(5000)">5K</button>
+                <button onclick="setAmount(21000)">21K</button>
+            </div>
         </div>
     </div>
 
@@ -149,27 +158,110 @@ h1 { font-size: 20px; color: #f7931a; margin-bottom: 16px; }
 const BASE_URL = 'https://linyao0177.github.io/bitaxe-pay/';
 let currentUrl = '';
 
+// Solana USDC mints
+const SOL_USDC = {
+    'solana:mainnet': 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+    'solana:devnet':  '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+};
+
 function setAmount(val) {
-    document.getElementById('input-amount').value = val.toFixed(2);
+    const net = document.getElementById('input-network').value;
+    if (net === 'lightning') {
+        document.getElementById('input-amount').value = Math.round(val);
+    } else {
+        document.getElementById('input-amount').value = val.toFixed(2);
+    }
+}
+
+function onNetworkChange() {
+    const net = document.getElementById('input-network').value;
+    const isLightning = net === 'lightning';
+    const isSolana = net.startsWith('solana:');
+    const isEVM = net.startsWith('eip155:');
+
+    // Update address placeholder and label
+    const addrInput = document.getElementById('input-to');
+    const addrLabel = document.getElementById('addr-label');
+    if (isLightning) {
+        addrLabel.textContent = 'Lightning Address or LNURL';
+        addrInput.placeholder = 'user@getalby.com or lnurl1...';
+    } else if (isSolana) {
+        addrLabel.textContent = 'Solana Wallet Address';
+        addrInput.placeholder = 'Base58 address...';
+    } else {
+        addrLabel.textContent = 'Receive Address';
+        addrInput.placeholder = '0x...';
+    }
+
+    // Update amount unit
+    document.getElementById('amount-label').textContent =
+        isLightning ? 'Amount (sats)' : 'Amount (USDC)';
+    document.getElementById('amount-unit').textContent =
+        isLightning ? 'sats' : 'USDC';
+
+    // Toggle presets
+    document.getElementById('presets-usdc').style.display = isLightning ? 'none' : 'flex';
+    document.getElementById('presets-sats').style.display = isLightning ? 'flex' : 'none';
+
+    // Reset amount for Lightning
+    if (isLightning) {
+        document.getElementById('input-amount').value = '1000';
+        document.getElementById('input-amount').step = '1';
+        document.getElementById('input-amount').min = '1';
+    } else {
+        document.getElementById('input-amount').value = '0.10';
+        document.getElementById('input-amount').step = '0.01';
+        document.getElementById('input-amount').min = '0.01';
+    }
 }
 
 function generateQR() {
     const to = document.getElementById('input-to').value.trim();
-    const amountUSDC = parseFloat(document.getElementById('input-amount').value);
     const network = document.getElementById('input-network').value;
     const duration = document.getElementById('input-duration').value;
+    const amountRaw = parseFloat(document.getElementById('input-amount').value);
 
-    if (!to || !to.startsWith('0x')) { alert('Please enter a valid Ethereum address'); return; }
-    if (isNaN(amountUSDC) || amountUSDC <= 0) { alert('Please enter a valid amount'); return; }
+    if (!to) { alert('Please enter a valid address'); return; }
+    if (isNaN(amountRaw) || amountRaw <= 0) { alert('Please enter a valid amount'); return; }
 
-    const amount = Math.round(amountUSDC * 1e6);
-    const params = new URLSearchParams({ to, amount, network, duration });
-    currentUrl = BASE_URL + '?' + params.toString();
+    const isLightning = network === 'lightning';
+    const isSolana = network.startsWith('solana:');
+
+    // Validate address format
+    if (!isLightning && !isSolana && !to.startsWith('0x')) {
+        alert('Please enter a valid Ethereum address (0x...)'); return;
+    }
+
+    // Build URL based on network type
+    if (isSolana) {
+        // Solana Pay URL: solana:<recipient>?amount=<decimal>&spl-token=<mint>
+        const mint = SOL_USDC[network];
+        const solAmount = amountRaw; // USDC amount as decimal
+        const ref = Array.from(crypto.getRandomValues(new Uint8Array(32)))
+            .map(b => b.toString(16).padStart(2, '0')).join('');
+        currentUrl = `solana:${to}?amount=${solAmount}&spl-token=${mint}&label=Bitaxe&message=Hashrate+rental`;
+    } else if (isLightning) {
+        // For Lightning: link to payment page with lightning params
+        const sats = Math.round(amountRaw);
+        const params = new URLSearchParams({ to, amount: sats, network, duration });
+        currentUrl = BASE_URL + '?' + params.toString();
+    } else {
+        // EVM: existing flow
+        const amount = Math.round(amountRaw * 1e6);
+        const params = new URLSearchParams({ to, amount, network, duration });
+        currentUrl = BASE_URL + '?' + params.toString();
+    }
 
     // Badge
     const badge = document.getElementById('qr-badge');
-    const isTestnet = network === 'eip155:84532';
-    badge.textContent = isTestnet ? 'Testnet' : 'Mainnet';
+    const testNets = ['eip155:84532', 'solana:devnet'];
+    const isTestnet = testNets.includes(network);
+    const netNames = {
+        'eip155:84532': 'Base Sepolia', 'eip155:8453': 'Base',
+        'solana:devnet': 'Solana Devnet', 'solana:mainnet': 'Solana',
+        'lightning': 'Lightning',
+    };
+    badge.textContent = netNames[network] || network;
     badge.className = 'net-badge ' + (isTestnet ? 'testnet' : 'mainnet');
 
     // URL
@@ -228,8 +320,14 @@ function downloadQR() {
     ctx.textAlign = 'center';
     const amt = document.getElementById('input-amount').value;
     const net = document.getElementById('input-network').value;
-    const netName = net === 'eip155:8453' ? 'Base' : 'Base Sepolia';
-    ctx.fillText('Bitaxe x402 — ' + amt + ' USDC (' + netName + ')', w / 2, h - pad + 8);
+    const netNames = {
+        'eip155:84532': 'Base Sepolia', 'eip155:8453': 'Base',
+        'solana:devnet': 'Solana Devnet', 'solana:mainnet': 'Solana',
+        'lightning': 'Lightning',
+    };
+    const netName = netNames[net] || net;
+    const unit = net === 'lightning' ? 'sats' : 'USDC';
+    ctx.fillText('Bitaxe x402 — ' + amt + ' ' + unit + ' (' + netName + ')', w / 2, h - pad + 8);
 
     const link = document.createElement('a');
     link.download = 'bitaxe-x402-qr.png';

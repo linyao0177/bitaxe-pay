@@ -227,27 +227,42 @@ body {
     <a href="https://github.com/linyao0177/boat-mwr">Powered by boat-mwr x402</a>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 // ---- Network Configuration ----
 const NETWORKS = {
     'eip155:84532': {
-        chainId: 84532,
-        name: 'Base Sepolia',
+        type: 'evm', chainId: 84532, name: 'Base Sepolia',
         rpcUrl: 'https://sepolia.base.org',
         explorer: 'https://sepolia.basescan.org',
         usdc: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-        usdcName: 'USDC',
-        usdcVersion: '2',
-        isTestnet: true,
+        usdcName: 'USDC', usdcVersion: '2', isTestnet: true,
     },
     'eip155:8453': {
-        chainId: 8453,
-        name: 'Base',
+        type: 'evm', chainId: 8453, name: 'Base',
         rpcUrl: 'https://mainnet.base.org',
         explorer: 'https://basescan.org',
         usdc: '0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913',
-        usdcName: 'USD Coin',
-        usdcVersion: '2',
+        usdcName: 'USD Coin', usdcVersion: '2', isTestnet: false,
+    },
+    'solana:devnet': {
+        type: 'solana', name: 'Solana Devnet',
+        rpcUrl: 'https://api.devnet.solana.com',
+        explorer: 'https://explorer.solana.com',
+        explorerSuffix: '?cluster=devnet',
+        usdcMint: '4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU',
+        isTestnet: true,
+    },
+    'solana:mainnet': {
+        type: 'solana', name: 'Solana',
+        rpcUrl: 'https://api.mainnet-beta.solana.com',
+        explorer: 'https://explorer.solana.com',
+        explorerSuffix: '',
+        usdcMint: 'EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v',
+        isTestnet: false,
+    },
+    'lightning': {
+        type: 'lightning', name: 'Lightning',
         isTestnet: false,
     },
 };
@@ -279,8 +294,10 @@ badge.className = 'net-badge ' + (NET.isTestnet ? 'testnet' : 'mainnet');
 if (!OFFER.payTo) {
     showStatus('status-offer', 'error', 'Missing "to" parameter in URL. QR code may be invalid.');
 } else {
-    const amt = (parseInt(OFFER.amount) / 1e6).toFixed(2);
+    const isLN = NET.type === 'lightning';
+    const amt = isLN ? parseInt(OFFER.amount).toLocaleString() : (parseInt(OFFER.amount) / 1e6).toFixed(2);
     document.getElementById('offer-price').textContent = amt;
+    if (isLN) document.querySelector('.offer-unit').textContent = 'sats';
     document.getElementById('offer-duration').textContent =
         parseInt(OFFER.duration) >= 3600
             ? (parseInt(OFFER.duration)/3600) + ' hour'
@@ -294,23 +311,51 @@ if (!OFFER.payTo) {
 function initWalletButtons() {
     const isMobile = /iPhone|iPad|Android|Mobile/i.test(navigator.userAgent);
     const hasInjected = !!window.ethereum;
+    const hasSolana = !!window.solana;
 
-    if (hasInjected) {
-        document.getElementById('btn-injected').style.display = 'block';
-    } else if (isMobile) {
-        const pageUrl = location.href.replace(/^https?:\/\//, '');
-        const encodedUrl = encodeURIComponent(location.href);
-        document.getElementById('btn-metamask').href = 'https://metamask.app.link/dapp/' + pageUrl;
-        document.getElementById('btn-okx').href = 'okx://wallet/dapp/url?dappUrl=' + encodedUrl;
-        document.getElementById('btn-trust').href = 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodedUrl;
-        document.getElementById('btn-imtoken').href = 'imtokenv2://navigate/DappView?url=' + encodedUrl;
-        document.getElementById('btn-tp').href = 'tpoutside://open?params=' + encodeURIComponent(JSON.stringify({url: location.href}));
-        document.getElementById('btn-coinbase').href = 'https://go.cb-w.com/dapp?cb_url=' + encodedUrl;
-        document.getElementById('btn-rainbow').href = 'https://rnbwapp.com/dapp?url=' + encodedUrl;
-        document.getElementById('btn-bitget').href = 'https://bkcode.vip?action=dapp&url=' + encodedUrl;
-        document.getElementById('mobile-wallets').style.display = 'block';
+    if (NET.type === 'solana') {
+        // Solana: show Phantom/Solflare options
+        document.getElementById('mobile-wallets').style.display = 'none';
+        if (hasSolana) {
+            document.getElementById('btn-injected').style.display = 'block';
+            document.getElementById('btn-injected').textContent = 'Connect Phantom & Pay';
+        } else if (isMobile) {
+            // Show Solana Pay QR or Phantom deep link
+            const encodedUrl = encodeURIComponent(location.href);
+            document.getElementById('btn-metamask').textContent = 'Phantom';
+            document.getElementById('btn-metamask').href = 'https://phantom.app/ul/browse/' + encodedUrl;
+            document.getElementById('btn-metamask').style.display = 'block';
+            document.getElementById('btn-metamask').className = 'btn primary';
+            document.getElementById('btn-okx').style.display = 'none';
+            document.querySelectorAll('.wallet-grid').forEach(g => g.style.display = 'none');
+            document.getElementById('mobile-wallets').style.display = 'block';
+        } else {
+            showStatus('status-offer', 'info', 'Install Phantom browser extension to pay.');
+        }
+    } else if (NET.type === 'lightning') {
+        // Lightning: show invoice QR directly
+        document.getElementById('mobile-wallets').style.display = 'none';
+        document.getElementById('btn-injected').style.display = 'none';
+        showLightningInvoice();
     } else {
-        showStatus('status-offer', 'info', 'Install MetaMask browser extension to pay.');
+        // EVM: existing flow
+        if (hasInjected) {
+            document.getElementById('btn-injected').style.display = 'block';
+        } else if (isMobile) {
+            const pageUrl = location.href.replace(/^https?:\/\//, '');
+            const encodedUrl = encodeURIComponent(location.href);
+            document.getElementById('btn-metamask').href = 'https://metamask.app.link/dapp/' + pageUrl;
+            document.getElementById('btn-okx').href = 'okx://wallet/dapp/url?dappUrl=' + encodedUrl;
+            document.getElementById('btn-trust').href = 'https://link.trustwallet.com/open_url?coin_id=60&url=' + encodedUrl;
+            document.getElementById('btn-imtoken').href = 'imtokenv2://navigate/DappView?url=' + encodedUrl;
+            document.getElementById('btn-tp').href = 'tpoutside://open?params=' + encodeURIComponent(JSON.stringify({url: location.href}));
+            document.getElementById('btn-coinbase').href = 'https://go.cb-w.com/dapp?cb_url=' + encodedUrl;
+            document.getElementById('btn-rainbow').href = 'https://rnbwapp.com/dapp?url=' + encodedUrl;
+            document.getElementById('btn-bitget').href = 'https://bkcode.vip?action=dapp&url=' + encodedUrl;
+            document.getElementById('mobile-wallets').style.display = 'block';
+        } else {
+            showStatus('status-offer', 'info', 'Install MetaMask browser extension to pay.');
+        }
     }
 }
 
@@ -319,6 +364,11 @@ async function connectInjected() {
     const btn = document.getElementById('btn-injected');
     btn.disabled = true;
     btn.textContent = 'Connecting...';
+
+    if (NET.type === 'solana') {
+        return connectSolana(btn);
+    }
+
     try {
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
         walletAddress = accounts[0];
@@ -329,6 +379,132 @@ async function connectInjected() {
         showStatus('status-offer', 'error', e.message);
         btn.disabled = false;
         btn.textContent = 'Connect Wallet & Pay';
+    }
+}
+
+// ---- Solana Connect & Pay ----
+async function connectSolana(btn) {
+    try {
+        const provider = window.solana;
+        if (!provider || !provider.isPhantom) {
+            throw new Error('Phantom wallet not found');
+        }
+        const resp = await provider.connect();
+        walletAddress = resp.publicKey.toString();
+        activeProvider = provider;
+        showStatus('status-offer', 'success', 'Connected: ' + walletAddress.slice(0,8) + '...');
+
+        // Skip EIP-712 sign step, go directly to Solana transfer
+        setTimeout(() => showSolanaTransfer(), 500);
+    } catch (e) {
+        showStatus('status-offer', 'error', e.message);
+        btn.disabled = false;
+        btn.textContent = 'Connect Phantom & Pay';
+    }
+}
+
+async function showSolanaTransfer() {
+    showView('view-submit');
+    setStep(3);
+    const amt = (parseInt(OFFER.amount) / 1e6).toFixed(2);
+    document.getElementById('submit-amount').textContent = amt;
+    showStatus('status-submit', 'info', 'Send ' + amt + ' USDC on ' + NET.name);
+}
+
+async function submitSolanaTransfer() {
+    showStatus('status-submit', 'pending', 'Requesting transfer...');
+    try {
+        // Build Solana Pay transfer URL and trigger via Phantom
+        // For injected provider, we use signAndSendTransaction
+        const { Connection, PublicKey, Transaction, SystemProgram } = window.solanaWeb3 || {};
+
+        // Simplified: direct SPL token transfer via Phantom
+        // In production, would use @solana/web3.js and @solana/spl-token
+        // For now, show the Solana Pay QR as fallback
+        showStatus('status-submit', 'info',
+            'Scan the Solana Pay QR code below with your wallet app.');
+
+        // Generate Solana Pay URL and show as QR
+        const amt = (parseInt(OFFER.amount) / 1e6);
+        const solPayUrl = `solana:${OFFER.payTo}?amount=${amt}&spl-token=${NET.usdcMint}&label=Bitaxe&message=Hashrate+rental`;
+
+        document.getElementById('submit-amount').textContent = amt.toFixed(2);
+        const qrDiv = document.createElement('div');
+        qrDiv.style.cssText = 'background:#fff;border-radius:12px;padding:12px;display:inline-block;margin:12px auto;';
+        qrDiv.id = 'solana-qr';
+        const submitCard = document.querySelector('#view-submit .card');
+        const existing = document.getElementById('solana-qr');
+        if (existing) existing.remove();
+        submitCard.insertBefore(qrDiv, document.getElementById('btn-submit'));
+        if (window.QRCode) {
+            new QRCode(qrDiv, { text: solPayUrl, width: 200, height: 200 });
+        }
+
+        // Show done after manual confirmation
+        document.getElementById('btn-submit').textContent = 'I\'ve Paid';
+        document.getElementById('btn-submit').onclick = () => {
+            showView('view-done');
+            setStep(4);
+            document.getElementById('done-amount').textContent = amt.toFixed(2);
+            document.getElementById('done-status').textContent = 'Solana USDC transfer submitted!';
+            document.getElementById('done-tx').textContent = 'Check Solana Explorer';
+            document.getElementById('done-tx').href = NET.explorer + '/address/' + OFFER.payTo + (NET.explorerSuffix||'');
+        };
+    } catch (e) {
+        showStatus('status-submit', 'error', e.message);
+    }
+}
+
+// ---- Lightning Invoice Display ----
+function showLightningInvoice() {
+    const sats = parseInt(OFFER.amount);
+    showStatus('status-offer', 'info',
+        sats + ' sats via Lightning Network');
+
+    // Show Lightning Address / LNURL info
+    const infoDiv = document.createElement('div');
+    infoDiv.style.cssText = 'text-align:center;margin:16px 0;';
+    infoDiv.innerHTML = `
+        <div style="background:#0d1117;border:1px solid #f7931a44;border-radius:12px;padding:16px;margin:12px 0;">
+            <div style="font-size:12px;color:#888;margin-bottom:8px;">Send to Lightning Address</div>
+            <div style="font-family:monospace;font-size:14px;color:#f7931a;word-break:break-all;">${OFFER.payTo}</div>
+            <div style="font-size:28px;font-weight:800;color:#f7931a;margin:12px 0;">${sats.toLocaleString()}</div>
+            <div style="font-size:14px;color:#888;">satoshis</div>
+        </div>
+        <div style="font-size:11px;color:#555;margin-top:8px;">
+            Open any Lightning wallet and send to the address above.
+        </div>
+        <button class="btn primary" style="margin-top:16px;" onclick="lightningPaid()">
+            I've Paid
+        </button>
+    `;
+    const offerCard = document.querySelector('#view-offer .card');
+    const walletOpts = document.getElementById('wallet-options');
+    walletOpts.style.display = 'none';
+    offerCard.appendChild(infoDiv);
+}
+
+function lightningPaid() {
+    showView('view-done');
+    setStep(4);
+    const sats = parseInt(OFFER.amount);
+    document.getElementById('done-amount').textContent = sats.toLocaleString() + ' sats';
+    document.querySelector('#view-done .offer-unit').textContent = 'Paid';
+    document.getElementById('done-status').textContent = 'Lightning payment submitted!';
+    document.getElementById('done-tx').textContent = OFFER.payTo;
+    document.getElementById('done-tx').href = '#';
+
+    // Notify device if URL provided
+    if (OFFER.device) {
+        fetch(OFFER.device, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                network: 'lightning',
+                amount: parseInt(OFFER.amount),
+                duration: parseInt(OFFER.duration),
+            })
+        }).catch(() => {});
     }
 }
 
@@ -475,6 +651,8 @@ async function waitForReceipt(txHash, maxAttempts) {
 }
 
 async function submitOnChain() {
+    if (NET.type === 'solana') return submitSolanaTransfer();
+
     const btn = document.getElementById('btn-submit');
     btn.disabled = true;
     btn.textContent = 'Submitting...';
